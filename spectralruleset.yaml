@@ -1,0 +1,39 @@
+extends: ["spectral:oas"] # Extends the built-in OpenAPI ruleset
+
+rules:
+  # Custom rule: Ensure all API paths start with "/api"
+  path-starts-with-api:
+    description: All API paths must start with "/api".
+    message: Path "{{property}}" does not start with "/api".
+    given: "$.paths.*~" # Targets all path keys
+    then:
+      field: "$key"
+      function: pattern
+      functionOptions:
+        match: "^/api"
+
+  # A custom rule to ensure API path segments use kebab-case
+  paths-kebab-case:
+    description: All API path segments must be in kebab-case.
+    message: "{{property}} is not in kebab-case."
+    severity: warn
+    # `given` uses JSONPath to target specific parts of the API spec
+    given: $.paths[*]~
+    then:
+      function: pattern
+      functionOptions:
+        # Regular expression for kebab-case (including path parameters)
+        match: "^(\\/|[a-z0-9-.]+|{[a-zA-Z0-9_]+})+$"
+
+ # A custom rule to ensure API responses have a description
+  response-has-description:
+    description: All responses should have a description.
+    severity: error
+    # Target all response objects within all operations
+    given: $.paths.*.*.responses.*
+    then:
+      field: description
+      function: truthy
+      
+  # Turning off a specific rule from the extended ruleset
+  operation-id-unique: off
